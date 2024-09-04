@@ -8,7 +8,7 @@ ACLs were added for two main reasons:
 
 ## Configure Redis/Valkey configuration file with ACL
 
-Edit the configuration file to specify the "aclfile" directive to point to a file with a .acl extension name.
+Edit the configuration file to specify the `aclfile` directive to point to a file with a `.acl` extension name.
 ```
 aclfile /path/to/users.acl
 ```
@@ -18,13 +18,13 @@ Create the file in the directory:
 touch /path/to/users.acl
 ```
 
-Comment out the `requirepass` directive since this directive is not compatible with aclfile directive.
+Comment out the `requirepass` directive since this is not compatible with `aclfile`.
 ```
 # requirepass some-pass
 ```
 
 ## Create the user in the users.acl file
-There are two ways to add users in Redis/Valkey, from the aclfile or from the console.
+There are two ways to add users in Redis/Valkey, from the `aclfile` or from the console.
 
 ### Add/Edit user from the console
 Start the `valkey-server`
@@ -81,7 +81,7 @@ OK
 ```
 Prefix the plain-text password with the greater-than sign to signify that you are setting a password for this user.
 
-Another option is to use a sha256 hashed password instead of a plain-text password.
+Another option is to use a SHA256 hashed password instead of a plain-text password.
 ```
 codespace ➜ /workspace $ tr -dc A-Za-z0-9 </dev/urandom | head -c 24; echo
 Vqg9rti1Z4eqV8UIlTFAn5II
@@ -110,7 +110,7 @@ OK
 11) "selectors"
 12) (empty array)
 ```
-You will notice that we used `ACL SAVE` command, this saves all changes to the aclfile with passwords hashed with sha256 algorithm.
+You will notice that we used `ACL SAVE` command, this saves all changes to the `aclfile` with passwords hashed with SHA256 algorithm.
 ```
 codespace ➜ /workspace $ cat conf/users.acl
 user default on sanitize-payload #c12c00ad4fbc7d974d4521553b33762de8143dae6590adfea2bbe395ab02858b #63078c18d98caea6a47ca3cba932a813bca68c590c3b0de921b50bd5e0cb64c0 ~* &* +@all
@@ -124,7 +124,7 @@ codespace ➜ /workspace $ echo -n "bde70fc1e5fd05e2c8ed5c34111539275672a3a17465
 16a8174c2a35b7e67af2ab9bae220e77f971c041b50c1b4880fa902d16dc2770  -
 ```
 
-Add the new user `valkeyuser` in the aclfile allowing only selected commands 
+Add the new user `valkeyuser` in the `aclfile` allowing only selected commands 
 ```
 codespace ➜ /workspace $ cat conf/users.acl
 user default on sanitize-payload #c12c00ad4fbc7d974d4521553b33762de8143dae6590adfea2bbe395ab02858b #63078c18d98caea6a47ca3cba932a813bca68c590c3b0de921b50bd5e0cb64c0 ~* &* +@all
@@ -140,7 +140,7 @@ OK
 1) "user default on sanitize-payload #c12c00ad4fbc7d974d4521553b33762de8143dae6590adfea2bbe395ab02858b #63078c18d98caea6a47ca3cba932a813bca68c590c3b0de921b50bd5e0cb64c0 ~* &* +@all"
 ```
 
-Execute `acl load` to load the aclfile in to memory
+Execute `acl load` to load the `aclfile` in to memory
 ```
 127.0.0.1:6379> acl load
 OK
@@ -191,3 +191,30 @@ This new user has limited permissions, hence we can see an `ACL GETUSER` command
 127.0.0.1:6379> acl whoami
 "valkeyuser"
 ```
+
+### Delete a user
+Finally, to remove a user we use the `ACL DELUSER` command.
+```
+127.0.0.1:6379> acl list
+(error) NOPERM User valkeyuser has no permissions to run the 'acl|list' command
+```
+
+It fails because the `valkeyuser` does not have the specific permissions to execute the command. So we will authenticate as the default user.
+```
+127.0.0.1:6379> AUTH 8165aa69c31942f1649097a76540cb1eff27c127b79c5061a63d43b267fe1c48
+OK
+127.0.0.1:6379> acl list
+1) "user default on sanitize-payload #c12c00ad4fbc7d974d4521553b33762de8143dae6590adfea2bbe395ab02858b #63078c18d98caea6a47ca3cba932a813bca68c590c3b0de921b50bd5e0cb64c0 ~* &* +@all"
+2) "user valkeyuser on sanitize-payload #16a8174c2a35b7e67af2ab9bae220e77f971c041b50c1b4880fa902d16dc2770 ~* resetchannels -@all +info +acl|whoami +ping"
+```
+
+Proceed to delete the user `valkeyuser` as the default user which has admin rights.
+```
+127.0.0.1:6379> acl deluser valkeyuser
+(integer) 1
+127.0.0.1:6379> acl list
+1) "user default on sanitize-payload #c12c00ad4fbc7d974d4521553b33762de8143dae6590adfea2bbe395ab02858b #63078c18d98caea6a47ca3cba932a813bca68c590c3b0de921b50bd5e0cb64c0 ~* &* +@all"
+127.0.0.1:6379> acl save
+OK
+```
+The last command `ACL SAVE` will persist the changes to the aclfile.
