@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+set -ex -o pipefail
+
+HOSTS=3
+ARCH=amd64
+DISTRO=rocky
+VERSION=9
+PREFIX=valkey
+
+if [[ ! "${HOSTS}" ]]
+then
+  echo "No hosts declared. Skipping."
+  exit 1
+fi
+
+if [ "$1" == "initialize" ]
+then
+  echo "Initializing nodes...";
+  for c in $( seq 1 $HOSTS );
+  do
+    NAME="${PREFIX}${c}"
+    orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NAME}
+    sleep 1
+    ssh $NAME@orb -- "sudo dnf install epel-release vim less -y && sudo dnf install valkey -y && sudo dnf update -y"
+    echo "Done ${PREFIX}${c}"
+  done;
+  exit 0;
+fi
+
+if [ "$1" == "start" ]
+then
+  echo "Starting server and sentinel...";
+  MASTER="${PREFIX}1"
+  MASTERIP=$(ssh $MASTER@orb -- ip a | grep -E -o 'inet [0-9.]+' | grep -v 127.0.0.1 | awk '{print $2}')
+  for c in $( seq 1 $HOSTS );
+  do
+    NAME="${PREFIX}${c}"
+    ssh $NAME@orb -- "cat << EOF > ./sentinel.conf
+sentinel monitor ${MASTER} ${MASTERIP} 6379 2
+sentinel down-after-milliseconds ${MASTER} 5000
+sentinel failover-timeout ${MASTER} 60000
+sentinel parallel-syncs ${MASTER} 1
+
+logfile "sentinel.log"
+EOF"
+    if [ "${c}" == 1 ]
+    then
+       ssh $NAME@orb -- "cat << EOF > ./server.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+EOF"
+       ssh $NAME@orb -- "valkey-server ./server.conf --protected-mode no --daemonize yes && valkey-sentinel ./sentinel.conf --daemonize yes && ps aux|grep valkey"
+    else
+       ssh $NAME@orb -- "cat << EOF > ./server.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+
+replicaof ${MASTERIP} 6379
+EOF"
+       ssh $NAME@orb -- "valkey-server ./server.conf --protected-mode no --daemonize yes && valkey-sentinel ./sentinel.conf --daemonize yes && ps aux|grep valkey"
+    fi
+    echo "Done ${NAME}"
+  done;
+  exit 0;
+fi
+
+if [ "$1" == "cleanup" ]
+then
+  echo "Cleanup..."
+  for c in $( seq 1 $HOSTS );
+  do
+    HOST="${PREFIX}${c}"
+    if [[ "$(orbctl list | grep ${HOST} | wc -l)" != 0 ]]
+    then 
+       orbctl delete ${HOST} --force
+    fi
+  done;
+  exit 0;
+fi
+
+if [ "$1" == "ssh" ]
+then
+  HOST=$2
+  if [ "$(orbctl list | grep ${HOST} | awk '{print $1}')" == "${HOST}" ]
+  then
+    echo "Connecting to ${HOST}"
+    ssh $HOST@orb
+  else
+    echo "Container not found."
+    exit 0
+  fi
+fi
+
+if [ "$1" == "getmaster" ]
+then
+  HOST="${PREFIX}1"
+  if [ "$(orbctl list | grep ${HOST} | awk '{print $1}')" == "${HOST}" ]
+  then
+    ssh $HOST@orb -- valkey-cli -p 26379 SENTINEL master ${HOST}
+  fi
+  exit 0
+fi
