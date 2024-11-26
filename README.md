@@ -8,3 +8,4 @@
 - 0004 [Basic Replication](./0004_replication.md)
 - 0005 [Replication Options](./0005_replication_options.md)
 - 0006 [Valkey Cluster](./0006_valkey_cluster.md)
+- 0007 [Valkey Sentinel](./0007_valkey_sentinel.md)

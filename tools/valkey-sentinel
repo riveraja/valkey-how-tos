@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 
-set -ex -o pipefail
+set -e -o pipefail
 
 HOSTS=3
 ARCH=amd64
 DISTRO=rocky
 VERSION=9
 PREFIX=valkey
+SMASTER=valkeymaster
+
+startdate() {
+    echo "Start at `date`"
+}
+
+enddate() {
+    echo "End at `date`"
+}
 
 if [[ ! "${HOSTS}" ]]
 then
@@ -16,15 +25,22 @@ fi
 
 if [ "$1" == "initialize" ]
 then
+  startdate;
   echo "Initializing nodes...";
   for c in $( seq 1 $HOSTS );
   do
     NAME="${PREFIX}${c}"
+    if [ "$(orbctl list | grep $NAME | wc -l | xargs)" == "1" ]
+    then
+      echo "Node ${NAME} exists."
+      continue
+    fi
     orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NAME}
     sleep 1
     ssh $NAME@orb -- "sudo dnf install epel-release vim less -y && sudo dnf install valkey -y && sudo dnf update -y"
     echo "Done ${PREFIX}${c}"
   done;
+  enddate;
   exit 0;
 fi
 
@@ -33,14 +49,15 @@ then
   echo "Starting server and sentinel...";
   MASTER="${PREFIX}1"
   MASTERIP=$(ssh $MASTER@orb -- ip a | grep -E -o 'inet [0-9.]+' | grep -v 127.0.0.1 | awk '{print $2}')
+  echo "Master IP address: ${MASTERIP}"
   for c in $( seq 1 $HOSTS );
   do
     NAME="${PREFIX}${c}"
     ssh $NAME@orb -- "cat << EOF > ./sentinel.conf
-sentinel monitor ${MASTER} ${MASTERIP} 6379 2
-sentinel down-after-milliseconds ${MASTER} 5000
-sentinel failover-timeout ${MASTER} 60000
-sentinel parallel-syncs ${MASTER} 1
+sentinel monitor ${SMASTER} ${MASTERIP} 6379 2
+sentinel down-after-milliseconds ${SMASTER} 5000
+sentinel failover-timeout ${SMASTER} 60000
+sentinel parallel-syncs ${SMASTER} 1
 
 logfile "sentinel.log"
 EOF"
