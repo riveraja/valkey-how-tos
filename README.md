@@ -9,3 +9,4 @@
 - 0005 [Replication Options](./0005_replication_options.md)
 - 0006 [Valkey Cluster](./0006_valkey_cluster.md)
 - 0007 [Valkey Sentinel](./0007_valkey_sentinel.md)
+- 0008 [RIOT tool](./0008_riot_cli.md)

@@ -1,0 +1,21 @@
+---
+- name: Setup Primary Server
+  hosts: all
+
+  tasks:
+  - name: Ping
+    ansible.builtin.ping:
+
+  - name: Copy sentinel.conf
+    ansible.builtin.copy:
+      src: ./sentinel.conf
+      dest: /etc/sentinel.conf
+      owner: root
+      group: root
+      mode: 0644
+    become: true
+
+  - name: Start sentinel
+    ansible.builtin.shell:
+      cmd: /usr/bin/redis-sentinel /etc/sentinel.conf --protected-mode no --daemonize yes
+    become: true

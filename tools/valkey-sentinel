@@ -2,12 +2,12 @@
 
 set -e -o pipefail
 
-HOSTS=3
+HOSTS=FIXME
 ARCH=amd64
 DISTRO=rocky
 VERSION=9
-PREFIX=valkey
-SMASTER=valkeymaster
+PREFIX=FIXME
+SMASTER=FIXME
 
 startdate() {
     echo "Start at `date`"
@@ -38,7 +38,7 @@ then
     orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NAME}
     sleep 1
     ssh $NAME@orb -- "sudo dnf install epel-release vim less -y && sudo dnf install valkey -y && sudo dnf update -y"
-    echo "Done ${PREFIX}${c}"
+    echo "Done ${NAME}"
   done;
   enddate;
   exit 0;

@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail
+
+HOSTS=3
+ARCH=amd64
+DISTRO=rocky
+VERSION=9
+PREFIX=redisstack
+ALIAS=perconaredis
+OPTS=''
+
+startdate() {
+    echo "Start at `date`"
+}
+
+enddate() {
+    echo "End at `date`"
+}
+
+orbctl version > /dev/null
+if [ $? != 0 ]
+then
+  echo "Install orbctl - brew install orbstack"
+fi
+
+ansible --version > /dev/null
+if [ $? != 0 ]
+then
+  echo "Install ansible - brew install ansible"
+fi
+
+if [[ ! "${HOSTS}" ]]
+then
+  echo "No hosts declared. Skipping."
+  exit 1
+fi
+
+if [ "$1" == "initialize" ]
+then
+  startdate;
+  echo "Initializing...";
+  OPTS=$2
+  for c in $( seq 1 $HOSTS );
+  do
+    NODE="${PREFIX}${c}"
+    if [ "$(orbctl list | grep $NODE | wc -l | xargs)" == "1" ]
+    then
+      echo "Node ${NODE} exists."
+      continue
+    fi
+    orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NODE}
+    sleep 1
+    if [[ "${OPTS}" == "--verbose" ]]
+    then
+      ansible-playbook --verbose -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" install-playbook.yaml
+    else
+      ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" install-playbook.yaml
+    fi
+    echo "Done ${NODE}"
+  done;
+  enddate;
+  exit 0;
+fi
+
+if [ "$1" == "cleanup" ]
+then
+  echo "Cleanup..."
+  for c in $( seq 1 $HOSTS );
+  do
+    NODE="${PREFIX}${c}"
+    if [[ "$(orbctl list | grep ${NODE} | wc -l)" != 0 ]]
+    then 
+       orbctl delete ${NODE} --force
+    fi
+  done;
+  exit 0;
+fi
+
+if [ "$1" == "ssh" ]
+then
+  HOST=$2
+  if [ "$(orbctl list | grep ${HOST} | awk '{print $1}')" == "${HOST}" ]
+  then
+    echo "Connecting to ${HOST}"
+    ssh $HOST@orb
+  else
+    echo "Container not found."
+    exit 0
+  fi
+fi
+
+if [ "$1" == "start" ]
+then
+  OPTS=$2
+  if [ "${OPTS}" == "--sentinel" ]
+  then
+    MASTER="${PREFIX}1"
+    MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
+    echo "Master IP: ${MASTERIP}"
+    cat << EOF > ./sentinel.conf
+sentinel monitor ${ALIAS} ${MASTERIP} 6379 2
+sentinel down-after-milliseconds ${ALIAS} 5000
+sentinel failover-timeout ${ALIAS} 60000
+sentinel parallel-syncs ${ALIAS} 1
+
+logfile "sentinel.log"
+EOF
+    cat << EOF > ./server-primary.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+EOF
+    cat << EOF > ./server-replica.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+
+replicaof ${MASTERIP} 6379
+EOF
+    for i in $( seq 1 $HOSTS );
+    do
+      NODE="${PREFIX}${i}"
+      if [ "${i}" == 1 ]
+      then
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" primary-service-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" sentinel-playbook.yaml
+      else
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" replica-service-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" sentinel-playbook.yaml
+      fi
+    done
+    rm -f {sentinel.conf,server-primary.conf,server-replica.conf}
+    exit 0
+  elif [ "${OPTS}" == "--standard" ]
+  then
+    MASTER="${PREFIX}1"
+    MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
+    echo "Master IP: ${MASTERIP}"
+    cat << EOF > ./server-primary.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+EOF
+    cat << EOF > ./server-replica.conf
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+
+logfile "server.log"
+
+enable-debug-command "local"
+
+replicaof ${MASTERIP} 6379
+EOF
+    for i in $( seq 1 $HOSTS );
+    do
+      NODE="${PREFIX}${i}"
+      if [ "${i}" == 1 ]
+      then
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" primary-service-playbook.yaml
+      else
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" replica-service-playbook.yaml
+      fi
+    done
+    rm -f {server-primary.conf,server-replica.conf}
+    exit 0
+  elif [ "${OPTS}" == "" ]
+  then
+    echo "Specify --sentinel or --standard. eg ${0} ${1} --sentinel"
+    exit 0
+  fi
+fi
+
+echo "Usage: $0 [initialize|start|cleanup|ssh]"
+echo "initialize            -- Initialize the virtual machine nodes."
+echo "start [--sentinel]    -- Start redis-server and redis-sentinel services."
+echo "cleanup               -- Remove all instances."
+echo "ssh [nodename]        -- Connect to individual nodes."

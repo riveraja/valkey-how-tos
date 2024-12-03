@@ -1,0 +1,21 @@
+---
+- name: Setup Primary Server
+  hosts: all
+
+  tasks:
+  - name: Ping
+    ansible.builtin.ping:
+  
+  - name: Copy server.conf
+    ansible.builtin.copy:
+      src: ./server-replica.conf
+      dest: /etc/server.conf
+      owner: root
+      group: root
+      mode: 0644
+    become: true
+
+  - name: Start server
+    ansible.builtin.shell:
+      cmd: /usr/bin/redis-server /etc/server.conf --protected-mode no --daemonize yes
+    become: true

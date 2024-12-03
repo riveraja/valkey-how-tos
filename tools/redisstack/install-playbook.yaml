@@ -1,0 +1,35 @@
+---
+- name: Redis Installation
+  hosts: all
+
+  tasks:
+  - name: Ping
+    ansible.builtin.ping:
+  
+  - name: Import Redis key
+    ansible.builtin.rpm_key:
+      state: present
+      key: https://packages.redis.io/gpg
+    become: true
+  
+  - name: Install Redis repository
+    ansible.builtin.yum_repository:
+      name: Redis
+      description: Redis repository
+      baseurl: http://packages.redis.io/rpm/rhel9
+      enabled: 1
+      gpgcheck: 1
+    become: true
+  
+  - name: Install epel-release
+    ansible.builtin.dnf:
+      state: present
+      name: epel-release
+    become: true
+  
+  - name: Install Redis Stack
+    ansible.builtin.dnf:
+      state: present
+      name: redis-stack-server
+    become: true
+    
