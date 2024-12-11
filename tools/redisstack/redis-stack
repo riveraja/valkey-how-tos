@@ -6,10 +6,14 @@ HOSTS=3
 ARCH=amd64
 DISTRO=rocky
 VERSION=9
-PREFIX=redisstack
-ALIAS=perconaredis
-OPTS=''
+PREFIX=rs
+ALIAS=rs
+PLAYBOOKS='./playbooks'
+TIMEOUT=120
 
+####################
+# Common utilities
+####################
 startdate() {
     echo "Start at `date`"
 }
@@ -17,7 +21,11 @@ startdate() {
 enddate() {
     echo "End at `date`"
 }
+# End common utilities
 
+#######################
+# Check requirements
+#######################
 orbctl version > /dev/null
 if [ $? != 0 ]
 then
@@ -35,34 +43,36 @@ then
   echo "No hosts declared. Skipping."
   exit 1
 fi
+# End check requirements
 
+########################
+# Section - Initialize
+########################
 if [ "$1" == "initialize" ]
 then
   startdate;
   echo "Initializing...";
-  OPTS=$2
   for c in $( seq 1 $HOSTS );
   do
     NODE="${PREFIX}${c}"
     if [ "$(orbctl list | grep $NODE | wc -l | xargs)" == "1" ]
     then
       echo "Node ${NODE} exists."
-      continue
-    fi
-    orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NODE}
-    sleep 1
-    if [[ "${OPTS}" == "--verbose" ]]
-    then
-      ansible-playbook --verbose -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" install-playbook.yaml
     else
-      ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" install-playbook.yaml
+      gtimeout $TIMEOUT orbctl create -a ${ARCH} ${DISTRO}:${VERSION} ${NODE}
     fi
+    sleep 1
+    ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags install
     echo "Done ${NODE}"
   done;
   enddate;
   exit 0;
 fi
+# End section - initialize
 
+#####################
+# Section - cleanup
+#####################
 if [ "$1" == "cleanup" ]
 then
   echo "Cleanup..."
@@ -76,7 +86,11 @@ then
   done;
   exit 0;
 fi
+# End section - cleanup
 
+#################
+# Section - SSH
+#################
 if [ "$1" == "ssh" ]
 then
   HOST=$2
@@ -88,11 +102,17 @@ then
     echo "Container not found."
     exit 0
   fi
+  exit 0
 fi
+# End section -SSH
 
+###################
+# Section - Start
+###################
 if [ "$1" == "start" ]
 then
   OPTS=$2
+  # Subsection - start a sentinel cluster
   if [ "${OPTS}" == "--sentinel" ]
   then
     MASTER="${PREFIX}1"
@@ -131,15 +151,16 @@ EOF
       NODE="${PREFIX}${i}"
       if [ "${i}" == 1 ]
       then
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" primary-service-playbook.yaml
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" sentinel-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary,setup-sentinel
       else
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" replica-service-playbook.yaml
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" sentinel-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica,setup-sentinel
       fi
     done
     rm -f {sentinel.conf,server-primary.conf,server-replica.conf}
     exit 0
+  # end subsection - sentinel cluster
+
+  # Subsection - create standard replication cluster
   elif [ "${OPTS}" == "--standard" ]
   then
     MASTER="${PREFIX}1"
@@ -170,16 +191,26 @@ EOF
       NODE="${PREFIX}${i}"
       if [ "${i}" == 1 ]
       then
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" primary-service-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
       else
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" replica-service-playbook.yaml
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica
       fi
     done
     rm -f {server-primary.conf,server-replica.conf}
     exit 0
+  # End subsection - standard
+
+  # Subsection - start a standalone service
+  elif [ "${OPTS}" == "--standalone" ]
+  then
+    echo "Nothing todo here"
+    exit 0
+  # End subsection - standalone
+
+
   elif [ "${OPTS}" == "" ]
   then
-    echo "Specify --sentinel or --standard. eg ${0} ${1} --sentinel"
+    echo "Specify either --sentinel, --standard, or --standalone. eg ${0} ${1} --sentinel"
     exit 0
   fi
 fi

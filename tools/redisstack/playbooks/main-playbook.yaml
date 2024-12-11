@@ -1,0 +1,97 @@
+---
+- name: Main Playbook
+  hosts: all
+
+  tasks:
+    - name: Installation
+      tags: install
+      block:
+        - name: Ping
+          ansible.builtin.ping:
+
+        - name: Import Redis key
+          ansible.builtin.rpm_key:
+            state: present
+            key: https://packages.redis.io/gpg
+          become: true
+
+        - name: Install Redis repository
+          ansible.builtin.yum_repository:
+            name: Redis
+            description: Redis repository
+            baseurl: http://packages.redis.io/rpm/rhel9
+            enabled: 1
+            gpgcheck: 1
+          become: true
+
+        - name: Install epel-release
+          ansible.builtin.dnf:
+            state: present
+            name: epel-release
+          become: true
+
+        - name: Install Redis Stack
+          ansible.builtin.dnf:
+            state: present
+            name: redis-stack-server
+          become: true
+
+    - name: Primary Service
+      tags: setup-primary
+      block:
+        - name: Ping
+          ansible.builtin.ping:
+
+        - name: Copy server.conf
+          ansible.builtin.copy:
+            src: ../server-primary.conf
+            dest: /etc/server.conf
+            owner: root
+            group: root
+            mode: 0644
+          become: true
+
+        - name: Start server
+          ansible.builtin.shell:
+            cmd: /usr/bin/redis-stack-server /etc/server.conf --protected-mode no --daemonize yes
+          become: true
+
+    - name: Replica Service
+      tags: setup-replica
+      block:
+        - name: Ping
+          ansible.builtin.ping:
+
+        - name: Copy server.conf
+          ansible.builtin.copy:
+            src: ../server-replica.conf
+            dest: /etc/server.conf
+            owner: root
+            group: root
+            mode: 0644
+          become: true
+
+        - name: Start server
+          ansible.builtin.shell:
+            cmd: /usr/bin/redis-stack-server /etc/server.conf --protected-mode no --daemonize yes
+          become: true
+
+    - name: Sentinel Service
+      tags: setup-sentinel
+      block:
+        - name: Ping
+          ansible.builtin.ping:
+
+        - name: Copy sentinel.conf
+          ansible.builtin.copy:
+            src: ../sentinel.conf
+            dest: /etc/sentinel.conf
+            owner: root
+            group: root
+            mode: 0644
+          become: true
+
+        - name: Start sentinel
+          ansible.builtin.shell:
+            cmd: /usr/bin/redis-sentinel /etc/sentinel.conf --protected-mode no --daemonize yes
+          become: true
