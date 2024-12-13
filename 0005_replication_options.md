@@ -29,6 +29,3 @@ Before a replica is put into maintenance mode, it would be good to adjust the va
 ### repl-diskless-sync
 
 `repl-diskless-sync [string]` - whether or not the replication will be disk-based or diskless. Diskless replication avoids writing data to disk when syncing replicas. Downside to this is that more memory will be used in the master.
-
-
-

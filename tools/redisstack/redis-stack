@@ -106,6 +106,31 @@ then
 fi
 # End section -SSH
 
+##################
+# Section - Stop
+##################
+if [ "$1" == "stopserver" ]
+then
+  OPTS=$2
+  if [ "${OPTS}" == "--all" ]
+  then
+    for i in $( seq 1 $HOSTS )
+    NODE="${PREFIX}${i}"
+    do
+      if [[ "$(orbctl list | grep ${NODE} | wc -l)" != 0 ]]
+      then 
+        orbctl stop ${NODE}
+      fi
+    done
+  else
+    NODE="${OPTS}"
+    orbctl stop ${NODE}
+    exit 0
+  fi
+  exit 0
+fi
+# End section - Stop
+
 ###################
 # Section - Start
 ###################
@@ -124,14 +149,14 @@ sentinel down-after-milliseconds ${ALIAS} 5000
 sentinel failover-timeout ${ALIAS} 60000
 sentinel parallel-syncs ${ALIAS} 1
 
-logfile "sentinel.log"
+logfile "/var/log/sentinel.log"
 EOF
     cat << EOF > ./server-primary.conf
 appendonly yes
 appendfilename "server.aof"
 appenddirname "appenddir"
 
-logfile "server.log"
+logfile "/var/log/server.log"
 
 enable-debug-command "local"
 EOF
@@ -140,7 +165,7 @@ appendonly yes
 appendfilename "server.aof"
 appenddirname "appenddir"
 
-logfile "server.log"
+logfile "/var/log/server.log"
 
 enable-debug-command "local"
 
@@ -171,7 +196,7 @@ appendonly yes
 appendfilename "server.aof"
 appenddirname "appenddir"
 
-logfile "server.log"
+logfile "/var/log/server.log"
 
 enable-debug-command "local"
 EOF
@@ -180,7 +205,7 @@ appendonly yes
 appendfilename "server.aof"
 appenddirname "appenddir"
 
-logfile "server.log"
+logfile "/var/log/server.log"
 
 enable-debug-command "local"
 
