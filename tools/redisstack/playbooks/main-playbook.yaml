@@ -95,3 +95,40 @@
           ansible.builtin.shell:
             cmd: /usr/bin/redis-sentinel /etc/sentinel.conf --protected-mode no --daemonize yes
           become: true
+
+    - name: Create sentinel template
+      tags: sentinel-template
+      block:
+        - name: Master IP
+          become: yes
+          ansible.builtin.shell: "ip address | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1"
+          register: master_ip
+
+        - name: Create sentinel.conf
+          become: yes
+          vars:
+            master_ip_address: "{{ master_ip.stdout }}"
+          ansible.builtin.template:
+            src: ../templates/sentinel.cnf.j2
+            dest: /etc/sentinel.conf
+    
+    - name: Create Primary server template
+      tags: primary-template
+      block:
+        - name: Create Primary server.conf
+          ansible.builtin.template:
+            src: ../templates/primary-server.cnf.j2
+            dest: ./server-primary.conf
+    
+    - name: Create Replica server template
+      tags: replica-template
+      block:
+        - name: Master IP
+          become: yes
+          ansible.builtin.shell: "ip address | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1"
+          register: master_ip
+
+        - name: Create Replica server.conf
+          ansible.builtin.template:
+            src: ../templates/replica-server.cnf.j2
+            dest: ./server-replica.conf

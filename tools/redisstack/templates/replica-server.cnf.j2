@@ -1,0 +1,6 @@
+appendonly yes
+appendfilename "server.aof"
+appenddirname "appenddir"
+logfile "/var/log/server.log"
+enable-debug-command "local"
+replicaof {{ master_ip }} 6379

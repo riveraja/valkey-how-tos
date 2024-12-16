@@ -88,6 +88,14 @@ then
 fi
 # End section - cleanup
 
+if [ "$1" == "makeconf" ]
+then
+  MASTER="${PREFIX}1"
+  MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
+  echo "Master IP: ${MASTERIP}"
+  ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" -e "cluster_alias=${ALIAS}" -e "master_ip=${MASTERIP}" --tags sentinel-template,primary-template,replica-template
+fi
+
 #################
 # Section - SSH
 #################
@@ -115,8 +123,8 @@ then
   if [ "${OPTS}" == "--all" ]
   then
     for i in $( seq 1 $HOSTS )
-    NODE="${PREFIX}${i}"
     do
+      NODE="${PREFIX}${i}"
       if [[ "$(orbctl list | grep ${NODE} | wc -l)" != 0 ]]
       then 
         orbctl stop ${NODE}
@@ -143,34 +151,7 @@ then
     MASTER="${PREFIX}1"
     MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
     echo "Master IP: ${MASTERIP}"
-    cat << EOF > ./sentinel.conf
-sentinel monitor ${ALIAS} ${MASTERIP} 6379 2
-sentinel down-after-milliseconds ${ALIAS} 5000
-sentinel failover-timeout ${ALIAS} 60000
-sentinel parallel-syncs ${ALIAS} 1
-
-logfile "/var/log/sentinel.log"
-EOF
-    cat << EOF > ./server-primary.conf
-appendonly yes
-appendfilename "server.aof"
-appenddirname "appenddir"
-
-logfile "/var/log/server.log"
-
-enable-debug-command "local"
-EOF
-    cat << EOF > ./server-replica.conf
-appendonly yes
-appendfilename "server.aof"
-appenddirname "appenddir"
-
-logfile "/var/log/server.log"
-
-enable-debug-command "local"
-
-replicaof ${MASTERIP} 6379
-EOF
+    ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" -e "cluster_alias=${ALIAS}" -e "master_ip=${MASTERIP}" --tags sentinel-template,primary-template,replica-template
     for i in $( seq 1 $HOSTS );
     do
       NODE="${PREFIX}${i}"
@@ -191,26 +172,7 @@ EOF
     MASTER="${PREFIX}1"
     MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
     echo "Master IP: ${MASTERIP}"
-    cat << EOF > ./server-primary.conf
-appendonly yes
-appendfilename "server.aof"
-appenddirname "appenddir"
-
-logfile "/var/log/server.log"
-
-enable-debug-command "local"
-EOF
-    cat << EOF > ./server-replica.conf
-appendonly yes
-appendfilename "server.aof"
-appenddirname "appenddir"
-
-logfile "/var/log/server.log"
-
-enable-debug-command "local"
-
-replicaof ${MASTERIP} 6379
-EOF
+    ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" -e "cluster_alias=${ALIAS}" -e "master_ip=${MASTERIP}" --tags primary-template,replica-template
     for i in $( seq 1 $HOSTS );
     do
       NODE="${PREFIX}${i}"

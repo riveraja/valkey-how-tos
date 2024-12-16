@@ -1,0 +1,5 @@
+sentinel monitor {{ cluster_alias }} {{ master_ip }} 6379 2
+sentinel down-after-milliseconds {{ cluster_alias }} 5000
+sentinel failover-timeout {{ cluster_alias }} 60000
+sentinel parallel-syncs {{ cluster_alias }} 1
+logfile "/var/log/sentinel.log"
