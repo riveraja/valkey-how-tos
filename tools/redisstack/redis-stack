@@ -79,9 +79,12 @@ then
   for c in $( seq 1 $HOSTS );
   do
     NODE="${PREFIX}${c}"
-    if [[ "$(orbctl list | grep ${NODE} | wc -l)" != 0 ]]
+    if [[ "$(orbctl list | grep ${NODE} | wc -l | xargs)" != 0 ]]
     then 
        orbctl delete ${NODE} --force
+    elif [[ "$(orbctl list | grep ${NODE} | wc -l | xargs)" == 0 ]]
+    then
+      echo "Node ${NODE} does not exist"
     fi
   done;
   exit 0;
@@ -157,9 +160,9 @@ then
       NODE="${PREFIX}${i}"
       if [ "${i}" == 1 ]
       then
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary,setup-sentinel
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary,setup-sentinel
       else
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica,setup-sentinel
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica,setup-sentinel
       fi
     done
     rm -f {sentinel.conf,server-primary.conf,server-replica.conf}
@@ -172,15 +175,15 @@ then
     MASTER="${PREFIX}1"
     MASTERIP=$(ansible all -i "${MASTER}@orb," -u "${MASTER}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
     echo "Master IP: ${MASTERIP}"
-    ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" -e "cluster_alias=${ALIAS}" -e "master_ip=${MASTERIP}" --tags primary-template,replica-template
+    ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" -e "master_ip=${MASTERIP}" --tags primary-template,replica-template
     for i in $( seq 1 $HOSTS );
     do
       NODE="${PREFIX}${i}"
       if [ "${i}" == 1 ]
       then
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
       else
-        ansible-playbook -i "${NODE}@orb," -u "${NODE}" -l "${NODE}@orb" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica
+        ansible-playbook -i "${NODE}@orb," -u "${NODE}" "${PLAYBOOKS}/main-playbook.yaml" --tags setup-replica
       fi
     done
     rm -f {server-primary.conf,server-replica.conf}
@@ -190,7 +193,13 @@ then
   # Subsection - start a standalone service
   elif [ "${OPTS}" == "--standalone" ]
   then
-    echo "Nothing todo here"
+    ansible-playbook -i localhost "${PLAYBOOKS}/template-playbook.yaml" --tags primary-template
+    for i in $( seq 1 $HOSTS );
+    do
+      NODE="${PREFIX}${i}"
+      ansible-playbook -i "${NODE}@orb," "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
+    done
+    rm -f ./server-primary.conf
     exit 0
   # End subsection - standalone
 
