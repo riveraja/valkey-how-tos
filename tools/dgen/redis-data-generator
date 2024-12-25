@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Redis;
+use Getopt::Long;
+use Data::Faker;
+
+my $size = 1000;
+my $tag = '';
+my $type = '';
+my $starttime;
+my $endtime;
+
+GetOptions (
+  'size=i' => \my $my_size,
+  'tag=s' => \my $my_tag,
+  'type=s' => \my $my_type,
+  'batch=i' => \my $my_batch,
+) or die "Invalid options passed to $0\n";
+
+sub getstarttime {
+  $starttime = Time::HiRes::gettimeofday();
+}
+
+sub getendtime {
+  $endtime = Time::HiRes::gettimeofday();
+}
+
+sub getelapsedtime {
+  printf("Elapsed time: %.2f\n", $endtime - $starttime);
+}
+
+my $redis = Redis->new;
+
+$redis->ping || die "no server?";
+
+print "Inserting $my_size records\n";
+
+my $count = 1;
+
+if ( $my_type eq 'HSET' or $my_type eq 'hset' )
+{
+  getstarttime();
+  while ($count <= $my_size)
+  {
+    my $faker = Data::Faker->new();
+    my @responses;
+    if ( $my_tag ne '')
+    {
+      $redis->hmset("emp:{$my_tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+    }else{
+      $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+    }
+
+    my $res = $count % $my_batch;
+
+    if ( $res eq 0 )
+    {
+      $redis->wait_one_response;
+    }
+
+    $count += 1;
+  }
+  $redis->wait_one_response;
+  getendtime();
+  getelapsedtime();
+}
+
