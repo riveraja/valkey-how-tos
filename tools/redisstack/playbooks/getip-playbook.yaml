@@ -1,0 +1,14 @@
+---
+- name: Get IP Playbook
+  hosts: all
+
+  tasks:
+    - name: Get IP
+      tags: get-ip
+      become: yes
+      block:
+        - ansible.builtin.shell: "ip a | grep -E -o '[inet 0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1"
+          register: this_ip
+    
+        - ansible.builtin.debug:
+            msg: "{{ host }} {{ this_ip.stdout }}"

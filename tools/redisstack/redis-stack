@@ -2,7 +2,7 @@
 
 set -e -o pipefail
 
-HOSTS=3
+HOSTS=5
 ARCH=amd64
 DISTRO=rocky
 VERSION=9
@@ -142,6 +142,16 @@ then
 fi
 # End section - Stop
 
+  if [ "$1" == "get-ip" ]
+  then
+    for i in $( seq 1 $HOSTS );
+    do
+      NODE="${PREFIX}${i}"
+      IP=$(ansible all -i "${NODE}@orb," -u "${NODE}"  -a "ip address" | grep -E -o 'inet [0-9.]+' | awk '{print $2}' | grep -v 127.0.0.1)
+      echo "${NODE}: ${IP}"
+    done
+    exit 0
+  fi
 ###################
 # Section - Start
 ###################
@@ -197,12 +207,11 @@ then
     for i in $( seq 1 $HOSTS );
     do
       NODE="${PREFIX}${i}"
-      ansible-playbook -i "${NODE}@orb," "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
+      ansible-playbook --verbose -i "${NODE}@orb," "${PLAYBOOKS}/main-playbook.yaml" --tags setup-primary
     done
     rm -f ./server-primary.conf
     exit 0
   # End subsection - standalone
-
 
   elif [ "${OPTS}" == "" ]
   then
@@ -211,8 +220,9 @@ then
   fi
 fi
 
-echo "Usage: $0 [initialize|start|cleanup|ssh]"
+echo "Usage: $0 [initialize|start|cleanup|ssh|get-ip]"
 echo "initialize            -- Initialize the virtual machine nodes."
 echo "start [--sentinel]    -- Start redis-server and redis-sentinel services."
 echo "cleanup               -- Remove all instances."
 echo "ssh [nodename]        -- Connect to individual nodes."
+echo "get-ip                -- Get IP addresses of each node."
