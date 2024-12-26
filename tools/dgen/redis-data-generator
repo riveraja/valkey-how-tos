@@ -1,5 +1,12 @@
 #!/usr/bin/env perl
 
+#
+# Installation requirements
+#   perl-Redis
+#   perl-Time-HiRes
+#   perl-Data-Faker
+#
+
 use strict;
 use warnings;
 use Redis;
@@ -9,6 +16,7 @@ use Data::Faker;
 my $size = 1000;
 my $tag = '';
 my $type = '';
+my $batch = 50;
 my $starttime;
 my $endtime;
 
@@ -67,3 +75,51 @@ if ( $my_type eq 'HSET' or $my_type eq 'hset' )
   getelapsedtime();
 }
 
+__END__
+
+=head1 NAME
+
+redis-data-generator - A simple Redis/Valkey data generator
+
+=head1 SYNOPSYS
+
+redis-data-generator [options]
+
+  Options:
+    -help          Display the help message
+    -size          Number of records to generate
+    -tag           The hash tag [eg key:{tag}:value]
+    -type          Data type to generate [eg. HASH, STRING, etc]
+    -batch         Size of records in pipeline
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Display the help message and exit.
+
+=item B<-size>
+
+Number of records to generate.
+
+=item B<-tag>
+
+The hash tag to use (optional)
+
+=item B<-type>
+
+The data type to generate. Case-insensitive and only support HASH or hash for now.
+
+=item B<-batch>
+
+The nunber of records in the pipeline 
+
+=back
+
+=head1 DESCRIPTION
+
+This program is a simple data generator for Redis/Valkey.
+
+=cut
