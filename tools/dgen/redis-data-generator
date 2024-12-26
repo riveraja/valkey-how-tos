@@ -12,6 +12,7 @@ use warnings;
 use Redis;
 use Getopt::Long;
 use Data::Faker;
+use Pod::Usage qw(pod2usage);
 
 my $size = 1000;
 my $tag = '';
@@ -19,13 +20,17 @@ my $type = '';
 my $batch = 50;
 my $starttime;
 my $endtime;
+my $help = 0;
 
 GetOptions (
   'size=i' => \my $my_size,
   'tag=s' => \my $my_tag,
   'type=s' => \my $my_type,
   'batch=i' => \my $my_batch,
+  'help' => \$help,
 ) or die "Invalid options passed to $0\n";
+
+pod2usage(-exitval=0, -verbose=2) if $help;
 
 sub getstarttime {
   $starttime = Time::HiRes::gettimeofday();
