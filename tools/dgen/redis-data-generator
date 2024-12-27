@@ -21,8 +21,10 @@ my $batch = 50;
 my $starttime;
 my $endtime;
 my $help = 0;
+my $uri = '127.0.0.1:6379'
 
 GetOptions (
+  'uri=s' => \my $my_uri,
   'size=i' => \my $my_size,
   'tag=s' => \my $my_tag,
   'type=s' => \my $my_type,
@@ -44,7 +46,7 @@ sub getelapsedtime {
   printf("Elapsed time: %.2f\n", $endtime - $starttime);
 }
 
-my $redis = Redis->new;
+my $redis = Redis->new(server => $my_uri);
 
 $redis->ping || die "no server?";
 
@@ -92,6 +94,8 @@ redis-data-generator [options]
 
   Options:
     -help          Display the help message
+
+    -uri           The URI string (default: 127.0.0.1:6379)
     -size          Number of records to generate
     -tag           The hash tag [eg key:{tag}:value]
     -type          Data type to generate [eg. HASH, STRING, etc]
