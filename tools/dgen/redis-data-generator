@@ -16,23 +16,23 @@ use Pod::Usage qw(pod2usage);
 
 my $size = 1000;
 my $tag = '';
-my $type = '';
+my $type = 'hset';
 my $batch = 50;
 my $starttime;
 my $endtime;
 my $help = 0;
-my $uri = '127.0.0.1:6379'
+my $uri = '127.0.0.1:6379';
 
 GetOptions (
-  'uri=s' => \my $my_uri,
-  'size=i' => \my $my_size,
-  'tag=s' => \my $my_tag,
-  'type=s' => \my $my_type,
-  'batch=i' => \my $my_batch,
+  'uri:s' => \$uri,
+  'size:i' => \$size,
+  'tag:s' => \$tag,
+  'type:s' => \$type,
+  'batch:i' => \$batch,
   'help' => \$help,
 ) or die "Invalid options passed to $0\n";
 
-pod2usage(-exitval=0, -verbose=2) if $help;
+pod2usage(-exitval=>0, -verbose=>2) if $help;
 
 sub getstarttime {
   $starttime = Time::HiRes::gettimeofday();
@@ -46,38 +46,51 @@ sub getelapsedtime {
   printf("Elapsed time: %.2f\n", $endtime - $starttime);
 }
 
-my $redis = Redis->new(server => $my_uri);
+my $redis = Redis->new(server => $uri);
 
 $redis->ping || die "no server?";
 
-print "Inserting $my_size records\n";
+print "Inserting $size records\n";
 
 my $count = 1;
 
-if ( $my_type eq 'HSET' or $my_type eq 'hset' )
+if ( $type eq 'HSET' or $type eq 'hset' )
 {
   getstarttime();
-  while ($count <= $my_size)
+  while ($count <= $size)
   {
     my $faker = Data::Faker->new();
-    my @responses;
-    if ( $my_tag ne '')
+    if ( $batch gt 1 )
     {
-      $redis->hmset("emp:{$my_tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
-    }else{
-      $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+      if ( $tag ne '')
+      {
+        $redis->hmset("emp:{$tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+      }else{
+        $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+      }
+
+      my $res = $count % $batch;
+
+      if ( $res eq 0 )
+      {
+        $redis->wait_one_response;
+      }
+      
     }
-
-    my $res = $count % $my_batch;
-
-    if ( $res eq 0 )
+    elsif ( $batch eq 1 )
     {
-      $redis->wait_one_response;
+      if ( $tag ne '')
+      {
+        $redis->hmset("emp:{$tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
+      }else{
+        $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
+      }
     }
-
+    
     $count += 1;
   }
-  $redis->wait_one_response;
+  # $redis->wait_one_response;
+  $redis->quit;
   getendtime();
   getelapsedtime();
 }
