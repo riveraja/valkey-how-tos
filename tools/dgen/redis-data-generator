@@ -13,6 +13,7 @@ use Redis;
 use Getopt::Long;
 use Data::Faker;
 use Pod::Usage qw(pod2usage);
+use Date;
 
 my $size = 1000;
 my $tag = '';
@@ -46,11 +47,10 @@ sub getelapsedtime {
   printf("Elapsed time: %.2f\n", $endtime - $starttime);
 }
 
-# my $redis = Redis->new(server => $uri);
+my $redis = Redis->new(server => $uri, no_auto_connect_on_new => 1, reconnect => 5);
 
-# $redis->ping || die "no server?";
-
-print "Inserting $size records\n";
+my $now = Date::now();
+print "$now Inserting $size records\n";
 
 my $count = 1;
 
@@ -59,23 +59,30 @@ if ( $type eq 'HSET' or $type eq 'hset' )
   getstarttime();
   while ($count <= $size)
   {
+    my $ct = sprintf("%010d",$count);
     my $faker = Data::Faker->new();
     if ( $batch gt 1 )
     {
-      my $redis = Redis->new(server => $uri);
       if ( $tag ne '')
       {
-        $redis->hmset("emp:{$tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+        my $now = Date::now();
+        $redis->connect;
+        $redis->ping || die "$now $count lost server?";
+        $redis->hmset("emp:{$tag}:$ct", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
       }else{
-        $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
+        my $now = Date::now();
+        $redis->connect;
+        $redis->ping || die "$now $count lost server?";
+        $redis->hmset("emp:$ct", "name", $faker->name, "address", $faker->street_address, "city", $faker->city, sub {});
       }
 
       my $res = $count % $batch;
 
       if ( $res eq 0 )
       {
+        my $now = Date::now();
+        $redis->ping || die "$now $count lost server?";
         $redis->wait_one_response;
-	      $redis->quit;
       }
       
     }
@@ -83,20 +90,22 @@ if ( $type eq 'HSET' or $type eq 'hset' )
     {
       if ( $tag ne '')
       {
-	      my $redis = Redis->new(server => $uri);
-        $redis->hmset("emp:{$tag}:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
+        my $now = Date::now();
+        $redis->connect;
+        $redis->ping || die "$now $count no server?";
+        $redis->hmset("emp:{$tag}:$ct", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
 	      $redis->quit;
       }else{
-	      my $redis = Redis->new(server => $uri);
-        $redis->hmset("emp:$count", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
+        my $now = Date::now();
+        $redis->connect;
+        $redis->ping || die "$now $count no server?";
+        $redis->hmset("emp:$ct", "name", $faker->name, "address", $faker->street_address, "city", $faker->city);
 	      $redis->quit;
       }
     }
     
     $count += 1;
   }
-  # $redis->wait_one_response;
-  # $redis->quit;
   getendtime();
   getelapsedtime();
 }
@@ -117,7 +126,7 @@ redis-data-generator [options]
     -uri           The URI string (default: 127.0.0.1:6379)
     -size          Number of records to generate
     -tag           The hash tag [eg key:{tag}:value]
-    -type          Data type to generate [eg. HSET|hset]
+    -type          Data type to generate [eg. HASH, STRING, etc]
     -batch         Size of records in pipeline
 
 =head1 OPTIONS
@@ -138,11 +147,11 @@ The hash tag to use (optional)
 
 =item B<-type>
 
-The data type to generate. Case-insensitive and only support HSET|hset for now.
+The data type to generate. Case-insensitive and only support HASH or hash for now.
 
 =item B<-batch>
 
-The nunber of records in the pipeline. -batch=1 disables pipelining
+The nunber of records in the pipeline 
 
 =back
 
