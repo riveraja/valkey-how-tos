@@ -22,6 +22,8 @@ Note that not all data types is supported by Valkey as of this writing.
 ## Import data from a file/URL to Redis
 ```bash
 ./riot-standalone-4.1.10-linux-x86_64/bin/riot file-import http://storage.googleapis.com/jrx/beers.csv --header -h 127.0.0.1 -p 6379 hset —keyspace beer —key row
+```
+```bash
 ./riot-standalone-4.1.10-linux-x86_64/bin/riot file-import gs://jrx/beers.json --uri "redis://198.19.249.90:6379" json.set --keyspace beer --key id
 ```
 `--header` signifies that we're using the file's header as the fields
@@ -37,6 +39,8 @@ Note that not all data types is supported by Valkey as of this writing.
 ## Import data from MySQL to Redis
 ```bash
 ./riot-standalone-4.1.10-linux-x86_64/bin/riot db-import --jdbc-url "jdbc:mysql://198.19.249.197:3306/encrypted_db" --jdbc-username riot --jdbc-password riot "SELECT * FROM sbtest LIMIT 1000" --uri "redis://198.19.249.90:6379/0" hset --keyspace sbtest --key id
+```
+```bash
 ./riot-standalone-4.1.10-linux-x86_64/bin/riot db-import --jdbc-url "jdbc:mysql://198.19.249.197:3306/encrypted_db" --jdbc-username riot --jdbc-password riot "SELECT * FROM sbtest LIMIT 1000" --uri "redis://198.19.249.90:6379/0" json.set --keyspace sbtest --key id
 ```
 
