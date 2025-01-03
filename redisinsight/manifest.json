@@ -1,0 +1,37 @@
+{
+    "type": "group",
+    "id": "percona_redis_tutorials",
+    "label": "Percona Redis Tutorials",
+    "args": {
+        "withBorder": true,
+        "initialIsOpen": true
+    },
+    "children": [
+        {
+            "type": "group",
+            "id": "my_data",
+            "label": "Full-Text Search",
+            "args": {
+                "initialIsOpen": true
+            },
+            "children": [
+                {
+                    "type": "internal-link",
+                    "id": "managing_index",
+                    "label": "Managing indexes",
+                    "args": {
+                        "path": "/my_data/managing_index.md"
+                    }
+                },
+                {
+                    "type": "internal-link",
+                    "id": "querying_json",
+                    "label": "Querying JSON Documents",
+                    "args": {
+                        "path": "/my_data/querying_json.md"
+                    }
+                }
+            ]
+        }
+    ]
+}
