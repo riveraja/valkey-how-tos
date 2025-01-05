@@ -9,7 +9,7 @@
     "children": [
         {
             "type": "group",
-            "id": "my_data",
+            "id": "tutorials",
             "label": "Full-Text Search",
             "args": {
                 "initialIsOpen": true
@@ -20,7 +20,7 @@
                     "id": "managing_index",
                     "label": "Managing indexes",
                     "args": {
-                        "path": "/my_data/managing_index.md"
+                        "path": "/tutorials/managing_index.md"
                     }
                 },
                 {
@@ -28,7 +28,7 @@
                     "id": "querying_json",
                     "label": "Querying JSON Documents",
                     "args": {
-                        "path": "/my_data/querying_json.md"
+                        "path": "/tutorials/querying_json.md"
                     }
                 }
             ]
