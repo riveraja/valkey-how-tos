@@ -12,3 +12,4 @@
 - 0008 [RIOT tool](./0008_riot_cli.md)
 - 0009 [Using Twemproxy](./0009_using%20twemproxy.md)
 - 0010 [Using Envoy Proxy](./0010_using_envoyproxy.md)
+- 0011 [RedisInsight Tutorials](./0011_redisinsight_tutorials.md)
