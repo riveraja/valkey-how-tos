@@ -26,16 +26,21 @@ git clone https://github.com/riveraja/valkey-how-tos
 ## Upload the tutorial to RedisInsight
 
 Select Workbench, then click Explore or light bulb icon on the upper right corner.
+
 ![Workbench_icon](./img/workbench.png)
 
 Insights already has sample tutorials from the application. We need to collapse these default tutorials to see the Upload button.
+
 ![Insights_page](./img/insights.png)
 
 Click on the +Upload tutorial button and then follow instructions to upload the zip file.
+
 ![Upload](./img/upload.png)
+
 The zip file is located in `valkey-how-tos/redisinsight/percona-search-tutorials.zip`.
 
 Once you click `Submit`, the custom tutorials will be loaded.
+
 ![Loaded](./img/loaded.png)
 
 ## Using the data generator binary
