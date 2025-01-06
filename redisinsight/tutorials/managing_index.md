@@ -11,11 +11,11 @@ FT.CREATE sampleIdx ON JSON PREFIX 1 jkey: SCHEMA $.city AS city TEXT $.company 
 ## Alter the index
 
 ```redis Alter the index
-FT.ALTER sampleIdx SCHEMA ADD $.zip AS zip NUMERIC
+FT.ALTER sampleIdx SCHEMA ADD $.country AS country TEXT
 ```
 
 ## Drop the index
 
-```redis Drop and recreate
+```redis Drop the index
 FT.DROPINDEX sampleIdx
 ```

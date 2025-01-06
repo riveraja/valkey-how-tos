@@ -29,25 +29,25 @@ FT.SEARCH sampleIdx '@info:(quo veritatis)' RETURN 3 company city population LIM
 As above but this time we want to filter where city contains words Bogisich or Davis
 
 ```redis Filter by city containing Bogisich or Davis
-FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(bogisich|davis)' RETURN 3 company city population SORTBY population ASC
+FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south)' RETURN 3 company city population SORTBY population ASC
 ```
 
 As above but this time we want to filter by population less than 30 million
 
 ```redis Where population is less than 30 million
-FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(bogisich|davis) @population:[-inf 30000000]' RETURN 3 company city population SORTBY population ASC
+FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[-inf 30000000]' RETURN 3 company city population SORTBY population ASC
 ```
 
 As above but this time we want to filter by population between 20million to 30million
 
 ```redis Filter by population between 20M to 30M
-FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(bogisich|davis) @population:[20000000 30000000]' RETURN 3 company city population SORTBY population ASC
+FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[20000000 30000000]' RETURN 3 company city population SORTBY population ASC
 ```
 
 Showing score and explain score
 
 ```redis Using WITHSCORE and EXPLAINSCORES
-FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(bogisich|davis) @population:[20000000 30000000]' RETURN 3 company city population SORTBY population ASC WITHSCORES EXPLAINSCORE
+FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[20000000 30000000]' RETURN 3 company city population SORTBY population ASC WITHSCORES EXPLAINSCORE
 ```
 
 ## Aggregation queries
