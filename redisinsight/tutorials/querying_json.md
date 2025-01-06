@@ -26,7 +26,7 @@ As above, but this time sort by population ascending
 FT.SEARCH sampleIdx '@info:(quo veritatis)' RETURN 3 company city population LIMIT 0 3 SORTBY population ASC
 ```
 
-As above but this time we want to filter where city contains words Bogisich or Davis
+As above but this time we want to filter where city contains words `north` or `south`
 
 ```redis Filter by city containing Bogisich or Davis
 FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south)' RETURN 3 company city population SORTBY population ASC
@@ -38,7 +38,7 @@ As above but this time we want to filter by population less than 30 million
 FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[-inf 30000000]' RETURN 3 company city population SORTBY population ASC
 ```
 
-As above but this time we want to filter by population between 20million to 30million
+As above but this time we want to filter by population between 20 million to 30 million
 
 ```redis Filter by population between 20M to 30M
 FT.SEARCH sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[20000000 30000000]' RETURN 3 company city population SORTBY population ASC
@@ -66,8 +66,20 @@ FT.AGGREGATE sampleIdx "@info:(non optio)" GROUPBY 1 @country REDUCE COUNT 0 AS 
 
 ## Using explain
 
-It is best to select raw mode (-r) when running this
+It is best to select raw mode (-r) when executing this command
 
 ```redis Getting the explain plan
-FT.EXPLAINCLI sampleIdx '@info:(quo veritatis) @city:(bogisich|davis) @population:[20000000 30000000]' RETURN 3 company city population
+FT.EXPLAINCLI sampleIdx '@info:(quo veritatis) @city:(north|south) @population:[20000000 30000000]' RETURN 3 company city population
+```
+
+## Profiling the query
+
+To profile the query, use the `FT.PROFILE` statement
+
+```redis Profiling the search query
+FT.PROFILE sampleIdx SEARCH QUERY '@info:(quo veritatis)'
+```
+
+```redis Profiling the aggregate query
+FT.PROFILE sampleIdx AGGREGATE QUERY "@info:(non optio)" GROUPBY 1 @country REDUCE COUNT 0 AS count_country
 ```
