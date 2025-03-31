@@ -1,0 +1,96 @@
+services:
+  haproxy:
+    image: haproxy:2.9.15-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./haproxy:/usr/local/etc/haproxy:ro
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    ports:
+      - "8080:8080"
+    networks:
+      - valkey-network
+  
+  valkey1:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey2:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey3:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey4:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey5:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey6:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey7:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey8:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+  valkey9:
+    image: valkey/valkey:8.1-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - ./valkey:/usr/local/etc/valkey
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    networks:
+      - valkey-network
+
+networks:
+  valkey-network:
