@@ -13,3 +13,4 @@
 - 0009 [Using Twemproxy](./0009_using%20twemproxy.md)
 - 0010 [Using Envoy Proxy](./0010_using_envoyproxy.md)
 - 0011 [RedisInsight Tutorials](./0011_redisinsight_tutorials.md)
+- 0012 [HAProxy + Valkey Cluster](./0012_haproxy_valkey_cluster.md)
