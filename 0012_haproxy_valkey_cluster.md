@@ -23,10 +23,9 @@ mkdir -p docker/haproxy docker/valkey
 
 ```bash
 cd docker/
-curl -LO https://github.com/riveraja/valkey-how-tos/raw/refs/heads/main/tools/docker/haproxy/haproxy.cfg
-curl -LO https://github.com/riveraja/valkey-how-tos/raw/refs/heads/main/tools/docker/valkey/valkey.conf
-mv haproxy.cfg haproxy/
-mv valkey.conf valkey/
+curl -o haproxy/haproxy.cfg https://raw.githubusercontent.com/riveraja/valkey-how-tos/refs/heads/main/tools/docker/haproxy/haproxy.cfg
+curl -o valkey/valkey.conf https://raw.githubusercontent.com/riveraja/valkey-how-tos/refs/heads/main/tools/docker/valkey/valkey.conf
+curl -o compose.yaml https://raw.githubusercontent.com/riveraja/valkey-how-tos/refs/heads/main/tools/docker/compose.yaml
 ```
 ### HAProxy config file
 
