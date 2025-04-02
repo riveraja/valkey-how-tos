@@ -61,12 +61,6 @@ frontend stats
 
 ```
 
-### Download the compose.yml file
-
-```bash
-curl -LO https://github.com/riveraja/valkey-how-tos/raw/refs/heads/main/tools/docker/compose.yaml
-```
-
 ### Launch the containers
 
 ```bash
